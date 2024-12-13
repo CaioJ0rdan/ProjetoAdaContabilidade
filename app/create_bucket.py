@@ -2,22 +2,22 @@ import boto3
 import json
 
 # Configurações
-bucket_name = "bucket-adacontabilidade"  # Substitua por um nome único
-region = "us-east-1"  # Substitua pela sua região (exemplo: us-east-1)
-role_arn = "arn:aws:iam::507755385152:role/LambdaExecutionRole-S3-RDS-CJ"  # Substitua pelo ARN da role da Lambda
+bucket_name = "bucket-adacontabilidade"  # Bucket S3 Name
+region = "us-east-1"  
+role_arn = "arn:aws:iam::507755385152:role/LambdaExecutionRole-S3-RDS-CJ"  # ARN of Lambda role 
 
 # Cliente AWS
 s3 = boto3.client("s3", region_name=region)
 
 def create_bucket_with_policy(bucket_name, region):
     try:
-        # Criar o bucket
-        print(f"Criando o bucket '{bucket_name}' na região '{region}'...")
+        # Create the bucket.
+        print(f"Create bucket '{bucket_name}' in region '{region}'...")
         s3.create_bucket(Bucket=bucket_name)
-        print(f"Bucket '{bucket_name}' criado com sucesso.")
+        print(f"Bucket '{bucket_name}' created.")
 
-        # Adicionar política ao bucket
-        print("Adicionando política ao bucket...")
+        # Add Policy to Bucket.
+        print("Add policy to bucket...")
         bucket_policy = {
             "Version": "2012-10-17",
             "Statement": [
@@ -30,15 +30,15 @@ def create_bucket_with_policy(bucket_name, region):
             ]
         }
 
-        # Converter a política para JSON
+        # Convert Policy to Json.
         bucket_policy_json = json.dumps(bucket_policy)
 
-        # Aplicar a política ao bucket
+        # Apply Policy in bucket.
         s3.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy_json)
-        print("Política aplicada com sucesso.")
+        print("Policy apllied.")
 
-        # Configurar CORS (se necessário)
-        print("Configurando CORS para o bucket...")
+        # Configurar CORS 
+        print("Configure CORS to bucket...")
         cors_configuration = {
             "CORSRules": [
                 {
@@ -49,11 +49,11 @@ def create_bucket_with_policy(bucket_name, region):
             ]
         }
         s3.put_bucket_cors(Bucket=bucket_name, CORSConfiguration=cors_configuration)
-        print("Configuração de CORS aplicada com sucesso.")
+        print("CORS configure apllied.")
 
-        print(f"Configuração do bucket '{bucket_name}' concluída.")
+        print(f"Bucket configuration '{bucket_name}' succesfuly.")
     except Exception as e:
-        print(f"Erro ao criar o bucket ou configurar políticas: {e}")
+        print(f"Error in bucket creation or policy configurations: {e}")
 
-# Executar a função
+# Execute the function
 create_bucket_with_policy(bucket_name, region)

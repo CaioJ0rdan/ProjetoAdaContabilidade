@@ -4,16 +4,16 @@ import zipfile
 import os
 import subprocess
 
-# Configurações da Lambda
+# Lambda Configuration
 lambda_function_name = "ProcessFile"
 runtime = "python3.9"
-role_name = "LambdaExecutionRole-S3-RDS"  # Nome da role já criada
+role_name = "LambdaExecutionRole-S3-RDS"  # existing role
 zip_file_name = "lambda_function.zip"
 handler_name = "lambda_function.lambda_handler"
 region = "us-east-1"
 lambda_package_dir = "lambda_package"
 
-# Código da função Lambda
+# lambda_function.py :
 lambda_code = """
 import json
 import boto3
@@ -75,47 +75,47 @@ def lambda_handler(event, context):
 """
 
 def create_lambda_package():
-    # Criar a pasta lambda_package
+    # Creating lambda_package
     if not os.path.exists(lambda_package_dir):
         os.makedirs(lambda_package_dir)
-        print(f"Pasta '{lambda_package_dir}' criada com sucesso.")
+        print(f"Folder '{lambda_package_dir}' created.")
 
-    # Criar o arquivo lambda_function.py dentro da pasta
+    # Creating lambda_function.py in the folder
     with open(f"{lambda_package_dir}/lambda_function.py", "w") as f:
         f.write(lambda_code)
-    print(f"Arquivo 'lambda_function.py' criado em '{lambda_package_dir}'.")
+    print(f"Archive 'lambda_function.py' created in '{lambda_package_dir}'.")
 
-    # Instalar pymysql na pasta lambda_package
+    # Install pymysql in lambda_package
     print(f"Instalando pymysql em '{lambda_package_dir}'...")
     subprocess.run(["pip", "install", "pymysql", "-t", lambda_package_dir], check=True)
     print("Dependências instaladas com sucesso.")
 
-    # Criar o arquivo ZIP
-    print(f"Criando o arquivo ZIP '{zip_file_name}'...")
+    # Criate the ZIP file
+    print(f"Creating ZIP file '{zip_file_name}'...")
     with zipfile.ZipFile(zip_file_name, "w") as zipf:
         for root, dirs, files in os.walk(lambda_package_dir):
             for file in files:
                 file_path = os.path.join(root, file)
                 zipf.write(file_path, os.path.relpath(file_path, lambda_package_dir))
-    print(f"Arquivo ZIP '{zip_file_name}' criado com sucesso.")
+    print(f"ZIP file '{zip_file_name}' created.")
 
 def get_role_arn(role_name):
     try:
         iam_client = boto3.client("iam", region_name=region)
-        print(f"Obtendo ARN da role '{role_name}'...")
+        print(f"Getting role ARN  '{role_name}'...")
         response = iam_client.get_role(RoleName=role_name)
         role_arn = response["Role"]["Arn"]
-        print(f"ARN da role '{role_name}': {role_arn}")
+        print(f"ARN role '{role_name}': {role_arn}")
         return role_arn
     except Exception as e:
-        print(f"Erro ao obter ARN da role '{role_name}': {e}")
+        print(f"Error to get ARN role '{role_name}': {e}")
         return None
 
 def create_lambda_function(role_arn):
     lambda_client = boto3.client("lambda", region_name=region)
 
     try:
-        print(f"Criando a função Lambda '{lambda_function_name}'...")
+        print(f"Criating Lambda_function '{lambda_function_name}'...")
         with open(zip_file_name, "rb") as f:
             zip_content = f.read()
 
@@ -125,31 +125,31 @@ def create_lambda_function(role_arn):
             Role=role_arn,
             Handler=handler_name,
             Code={"ZipFile": zip_content},
-            Description="Função Lambda para processar arquivos no S3 e salvar dados no RDS",
-            Timeout=30,  # Tempo limite de 30 segundos
-            MemorySize=128,  # Memória de 128 MB
+            Description="lambda function to process files in S3 and save in RDS",
+            Timeout=30,  # Time limit of 30 seconds
+            MemorySize=128,  # Memory of 128 MB
             Publish=True
         )
-        print(f"Função Lambda '{lambda_function_name}' criada com sucesso.")
+        print(f"Lambda Function '{lambda_function_name}' created.")
         return response
     except Exception as e:
-        print(f"Erro ao criar a função Lambda: {e}")
+        print(f"Error to create lambda function: {e}")
         return None
 
 if __name__ == "__main__":
-    # Criar o pacote Lambda
+    # Create a lambda package
     create_lambda_package()
 
-    # Obter ARN da role existente
+    # Getting ARN of role 
     role_arn = get_role_arn(role_name)
     if not role_arn:
-        print("Falha ao obter o ARN da role. Verifique se a role existe e tente novamente.")
+        print("Fail to get the ARN role.")
     else:
         print(f"Role ARN: {role_arn}")
 
         # Criar a função Lambda
         lambda_response = create_lambda_function(role_arn)
         if lambda_response:
-            print("Configuração da Lambda concluída com sucesso!")
+            print("Lambda Configuration successfully completed!")
         else:
-            print("Falha ao criar a função Lambda.")
+            print("Fail to create a  Lambda function.")
